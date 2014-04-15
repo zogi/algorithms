@@ -4,6 +4,9 @@
 #include <vector>
 #include <map>
 
+namespace mcmf {
+namespace detail {
+
 template <typename Elem, typename Prio, typename Comp = std::less<Prio> >
 struct priority_queue
 {
@@ -77,3 +80,6 @@ void priority_queue<Elem, Prio, Comp>::pop()
 	es.pop_back();
 	sink_down(0);
 }
+
+} // namespace detail
+} // namespace mcmf

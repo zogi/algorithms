@@ -11,6 +11,8 @@
 
 #include "priority_queue.h"
 
+namespace mcmf {
+
 template <typename T>
 struct matrix: std::vector<T>
 {
@@ -32,6 +34,8 @@ struct constant_matrix
 	T operator()(int, int) const { return t; }
 	T const t;
 };
+
+namespace detail {
 
 template <typename HasArc, typename ArcCost>
 bool dijkstra(int num_nodes, int start_node, int goal_node, HasArc has_arc, ArcCost arc_cost, std::vector<int> & parent)
@@ -68,6 +72,8 @@ struct has_arc_residual
 	Residual const & residual;
 };
 
+} // namespace detail
+
 template <typename ArcCapacity, typename ArcCost>
 void min_cost_max_flow(int num_nodes, int source, int sink, ArcCapacity arc_capacity, ArcCost arc_cost, matrix<int> & flow)
 {
@@ -79,9 +85,10 @@ void min_cost_max_flow(int num_nodes, int source, int sink, ArcCapacity arc_capa
 			residual(i, j) = arc_capacity(i, j);
 		}
 	}
-	has_arc_residual<matrix<int> > has_arc = has_arc_residual<matrix<int> >(residual);
+	typedef detail::has_arc_residual<matrix<int> > HAR;
+	HAR has_arc = HAR(residual);
 	std::vector<int> parent;
-	while (dijkstra(num_nodes, source, sink, has_arc, arc_cost, parent)) {
+	while (detail::dijkstra(num_nodes, source, sink, has_arc, arc_cost, parent)) {
 		int path_max = -1;
 		for (int i = sink; i != source; i = parent[i]) {
 			int this_cap = residual(parent[i], i);
@@ -103,6 +110,8 @@ void min_cost_max_flow(int num_nodes, int source, int sink, ArcCapacity arc_capa
 		}
 	}
 }
+
+namespace detail {
 
 template <typename MatchPossible, typename MatchCost>
 struct matching_network
@@ -146,17 +155,19 @@ struct bind_const_mem_fun_2
 	MemFun f;
 };
 
+} // namespace detail
+
 template <typename MatchPossible, typename MatchCost>
 void min_cost_max_match(int na, int nb, MatchPossible match_possible, MatchCost match_cost, std::vector<int> & matching)
 {
 	typedef typename MatchCost::result_type CostType;
-	typedef matching_network<MatchPossible, MatchCost> NW;
+	typedef detail::matching_network<MatchPossible, MatchCost> NW;
 
 	NW nw(na, nb, match_possible, match_cost);
 	matrix<int> flow;
 	min_cost_max_flow(na + nb + 2, nw.source, nw.sink,
-			bind_const_mem_fun_2<NW,int,int,int>(nw, &NW::capacity),
-			bind_const_mem_fun_2<NW,CostType,int,int>(nw, &NW::arc_cost),
+			detail::bind_const_mem_fun_2<NW,int,int,int>(nw, &NW::capacity),
+			detail::bind_const_mem_fun_2<NW,CostType,int,int>(nw, &NW::arc_cost),
 			flow);
 	matching = std::vector<int>(na, -1);
 	for (int i = 0; i < na; ++i) {
@@ -169,10 +180,16 @@ void min_cost_max_match(int na, int nb, MatchPossible match_possible, MatchCost 
 	}
 }
 
+} // namespace mcmf
+
+using mcmf::matrix;
+using mcmf::constant_matrix;
+using mcmf::min_cost_max_match;
+
 int main()
 {
 	int na = 3, nb = 2;
-	constant_matrix<bool> match_possible = constant_matrix<bool>(true);
+	mcmf::constant_matrix<bool> match_possible = constant_matrix<bool>(true);
 	matrix<double> cost = matrix<double>(na, nb);
 	cost(0, 0) = 11.123;
 	cost(0, 1) = 8.7;
