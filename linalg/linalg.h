@@ -5,44 +5,44 @@
 
 namespace linalg {
 
-template <typename T, int N, int M>
+template <typename T, int M, int N>
 struct Matrix
 {
 	typedef T elem_type;
-	static constexpr int rows = N;
-	static constexpr int cols = M;
+	static constexpr int rows = M;
+	static constexpr int cols = N;
 	Matrix() {}
 	Matrix(T t) { fill(t); }
 	T operator()(int i, int j) const { return a[i][j]; }
 	T & operator()(int i, int j) { return a[i][j]; }
-	Matrix<T, M, N> transposed();
+	Matrix<T, N, M> transposed();
 	void fill(T);
 private:
-	T a[N][M];
+	T a[M][N];
 };
-template <typename T, int N, int M>
-void Matrix<T, N, M>::fill(T t)
+template <typename T, int M, int N>
+void Matrix<T, M, N>::fill(T t)
 {
-	for (int i = 0; i < N; ++i)
-		for (int j = 0; j < M; ++j)
+	for (int i = 0; i < M; ++i)
+		for (int j = 0; j < N; ++j)
 			a[i][j] = t;
 }
 
-template <typename T, int N, int M>
-Matrix<T, M, N> Matrix<T, N, M>::transposed()
+template <typename T, int M, int N>
+Matrix<T, N, M> Matrix<T, M, N>::transposed()
 {
-	Matrix <T, M, N> m;
+	Matrix <T, N, M> m;
 	for (int i = 0; i < a.rows; ++i)
 		for (int j = 0; j < a.cols; ++j)
 			m(j, i) = operator()(i, j);
 	return m;
 }
 
-template <typename T, int N>
-struct Vector: Matrix<T, N, 1>
+template <typename T, int M>
+struct Vector: Matrix<T, M, 1>
 {
-	enum { length = N };
-	Vector(T t = T()): Matrix<T, N, 1>(t) {}
+	enum { length = M };
+	Vector(T t = T()): Matrix<T, M, 1>(t) {}
 	T operator()(int i) const { return operator()(i, 0); }
 	T & operator()(int i) { return operator()(i, 0); }
 };
@@ -77,7 +77,7 @@ operator-(MatA const & a, MatB const & b)
 }
 
 template <typename MatA, typename MatB,
-	typename OutElemType = typename std::common_type<typename MatA::elem_type,typename MatB::elem_type>::type,
+	typename OutElemType = typename std::common_type<typename MatA::elem_type, typename MatB::elem_type>::type,
 	typename std::enable_if<(MatA::cols == MatB::rows), int>::type = 0>
 Matrix<OutElemType, MatA::rows, MatB::cols>
 operator*(MatA const & a, MatB const & b)
@@ -106,17 +106,17 @@ bool operator==(MatA const & a, MatB const & b)
 	return true;
 }
 
-template <typename T, int N, int M>
-Matrix<T, N, M> zeros()
+template <typename T, int M, int N>
+Matrix<T, M, N> zeros()
 {
-	return Matrix<T, N, M>(0);
+	return Matrix<T, M, N>(0);
 }
 
-template <typename T, int N>
-Matrix<T, N, N> identity()
+template <typename T, int M>
+Matrix<T, M, M> identity()
 {
-	auto a = zeros<T, N, N>();
-	for (int i = 0; i < N; ++i)
+	auto a = zeros<T, M, M>();
+	for (int i = 0; i < M; ++i)
 		a(i, i) = T(1);
 	return a;
 }
