@@ -1,6 +1,8 @@
 // Zoltán Gilián <zoltan.gilian@gmail.com>
 // 2014
 
+#include <cassert>
+#include <algorithm>
 #include <type_traits>
 
 namespace linalg {
@@ -13,6 +15,8 @@ struct Matrix
 	static constexpr int cols = N;
 	Matrix() {}
 	Matrix(T t) { fill(t); }
+	template <typename U, typename std::enable_if<std::is_convertible<U, T>::value, int>::type = 0>
+	Matrix(Matrix<U, M, N> const & m);
 	T operator()(int i, int j) const { return a[i][j]; }
 	T & operator()(int i, int j) { return a[i][j]; }
 	Matrix<T, N, M> transposed();
@@ -20,6 +24,16 @@ struct Matrix
 private:
 	T a[M][N];
 };
+
+template <typename T, int M, int N>
+template <typename U, typename std::enable_if<std::is_convertible<U, T>::value, int>::type>
+Matrix<T, M, N>::Matrix(Matrix<U, M, N> const & m)
+{
+	for (int i = 0; i < M; ++i)
+		for (int j = 0; j < N; ++j)
+			a[i][j] = m(i, j);
+}
+
 template <typename T, int M, int N>
 void Matrix<T, M, N>::fill(T t)
 {
@@ -41,10 +55,13 @@ Matrix<T, N, M> Matrix<T, M, N>::transposed()
 template <typename T, int M>
 struct Vector: Matrix<T, M, 1>
 {
+	typedef Matrix<T, M, 1> base;
 	enum { length = M };
-	Vector(T t = T()): Matrix<T, M, 1>(t) {}
-	T operator()(int i) const { return operator()(i, 0); }
-	T & operator()(int i) { return operator()(i, 0); }
+	Vector(T t = T()): base(t) {}
+	template <typename U>
+	Vector(Matrix<U, M, 1> const & m): base(m) {}
+	T operator()(int i, int j = 0) const { assert(j == 0); return base::operator()(i, 0); }
+	T & operator()(int i, int j = 0) { assert(j == 0); return base::operator()(i, 0); }
 };
 
 template <typename Mat>
