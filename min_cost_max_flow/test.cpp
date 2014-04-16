@@ -3,14 +3,13 @@
 #include "min_cost_max_flow.h"
 
 using mcmf::matrix;
-using mcmf::constant_matrix;
 using mcmf::min_cost_max_match;
 
 int main()
 {
 	int na = 3, nb = 2;
-	mcmf::constant_matrix<bool> match_possible = constant_matrix<bool>(true);
-	matrix<double> cost = matrix<double>(na, nb);
+	auto match_possible = [](int,int) { return true; };
+	auto cost = matrix<double>(na, nb);
 	cost(0, 0) = 11.123;
 	cost(0, 1) = 8.7;
 	cost(1, 0) = 104.7;

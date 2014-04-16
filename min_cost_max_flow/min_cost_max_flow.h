@@ -25,15 +25,6 @@ struct matrix: std::vector<T>
 	int rows, cols;
 };
 
-template <typename T>
-struct constant_matrix
-{
-	typedef T result_type;
-	constant_matrix(T t_ = T()): t(t_) {}
-	T operator()(int, int) const { return t; }
-	T const t;
-};
-
 namespace detail {
 
 template <typename HasArc, typename ArcCost>
@@ -41,8 +32,8 @@ bool dijkstra(int num_nodes, int start_node, int goal_node, HasArc has_arc, ArcC
 {
 	parent.resize(num_nodes, -1);
 
-	std::vector<bool> visited = std::vector<bool>(num_nodes, false);
-	priority_queue<int, double, std::greater<double> > q;
+	auto visited = std::vector<bool>(num_nodes, false);
+	auto q = priority_queue<int, double, std::greater<double>>();
 
 	q.increase_priority(start_node, 0);
 	while (!q.empty()) {
@@ -78,14 +69,13 @@ void min_cost_max_flow(int num_nodes, int source, int sink, ArcCapacity arc_capa
 {
 	flow.resize(num_nodes, num_nodes, 0);
 
-	matrix<int> residual = matrix<int>(num_nodes, num_nodes);
+	auto residual = matrix<int>(num_nodes, num_nodes);
 	for (int i = 0; i < num_nodes; ++i) {
 		for (int j = 0; j < num_nodes; ++j) {
 			residual(i, j) = arc_capacity(i, j);
 		}
 	}
-	typedef detail::has_arc_residual<matrix<int> > HAR;
-	HAR has_arc = HAR(residual);
+	auto has_arc = detail::has_arc_residual<matrix<int>>(residual);
 	std::vector<int> parent;
 	while (detail::dijkstra(num_nodes, source, sink, has_arc, arc_cost, parent)) {
 		int path_max = -1;
@@ -141,32 +131,18 @@ matching_network<MatchPossible, MatchCost>::arc_cost(int i, int j) const {
 	return (is_in_a(i) && is_in_b(j)) ? match_cost(i, j-na) : 0;
 };
 
-// TODO
-// with c++11 lambdas all of this would be much easier
-// also use auto
-template <typename Class, typename Result, typename Arg1, typename Arg2>
-struct bind_const_mem_fun_2
-{
-	typedef Result(Class::*MemFun)(Arg1, Arg2) const;
-	bind_const_mem_fun_2(Class const & t_,MemFun f_): t(t_), f(f_) {}
-	Result operator()(Arg1 i, Arg2 j) const { return (t.*f)(i, j); }
-	Class const & t;
-	MemFun f;
-};
-
 } // namespace detail
 
 template <typename MatchPossible, typename MatchCost>
 void min_cost_max_match(int na, int nb, MatchPossible match_possible, MatchCost match_cost, std::vector<int> & matching)
 {
-	typedef typename MatchCost::result_type CostType;
-	typedef detail::matching_network<MatchPossible, MatchCost> NW;
+	typedef detail::matching_network<MatchPossible, MatchCost> MatchingNetwork;
 
-	NW nw(na, nb, match_possible, match_cost);
+	auto nw = MatchingNetwork(na, nb, match_possible, match_cost);
 	matrix<int> flow;
 	min_cost_max_flow(na + nb + 2, nw.source, nw.sink,
-			detail::bind_const_mem_fun_2<NW,int,int,int>(nw, &NW::capacity),
-			detail::bind_const_mem_fun_2<NW,CostType,int,int>(nw, &NW::arc_cost),
+			[&nw](int i, int j){ return nw.capacity(i, j); },
+			[&nw](int i, int j){ return nw.arc_cost(i, j); },
 			flow);
 	matching = std::vector<int>(na, -1);
 	for (int i = 0; i < na; ++i) {

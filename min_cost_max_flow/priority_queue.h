@@ -7,7 +7,7 @@
 namespace mcmf {
 namespace detail {
 
-template <typename Elem, typename Prio, typename Comp = std::less<Prio> >
+template <typename Elem, typename Prio, typename Comp = std::less<Prio>>
 struct priority_queue
 {
 	priority_queue(Comp comp_ = Comp()): comp(comp_) {}
@@ -18,7 +18,7 @@ struct priority_queue
 	bool empty() const { return es.empty(); }
 private:
 	typedef std::map<Elem, int> ElemMap;
-	std::vector<std::pair<Elem, Prio> > es;
+	std::vector<std::pair<Elem, Prio>> es;
 	ElemMap m;
 	Comp comp;
 	void bubble_up(int i);
